@@ -1,0 +1,161 @@
+urlparse	http://www.example.com/path;params?query=1#frag	http|www.example.com|/path|params|query=1|frag|||www.example.com|
+urlparse	https://user:pass@host.example.com:8080/a/b?c=d#e	https|user:pass@host.example.com:8080|/a/b||c=d|e|user|pass|host.example.com|8080
+urlparse	http://[::1]:8080/path	http|[::1]:8080|/path||||||::1|8080
+urlparse	http://[2001:db8::1]/	http|[2001:db8::1]|/||||||2001:db8::1|
+urlparse	//netloc/path	|netloc|/path||||||netloc|
+urlparse	path/only	||path/only|||||||
+urlparse	/absolute/path	||/absolute/path|||||||
+urlparse	scheme:opaque	scheme||opaque|||||||
+urlparse	http://host	http|host|||||||host|
+urlparse	http://host/	http|host|/||||||host|
+urlparse		|||||||||
+urlparse	#fragonly	|||||fragonly||||
+urlparse	?queryonly	||||queryonly|||||
+urlparse	;paramsonly	|||paramsonly||||||
+urlparse	HTTP://Example.COM/Path	http|Example.COM|/Path||||||example.com|
+urlparse	http://user@host	http|user@host|||||user||host|
+urlparse	http://:pass@host	http|:pass@host||||||pass|host|
+urlparse	ftp://ftp.example.com/file.txt	ftp|ftp.example.com|/file.txt||||||ftp.example.com|
+urlparse	mailto:user@example.com	mailto||user@example.com|||||||
+urlparse	http://host:80/p?a=b&c=d	http|host:80|/p||a=b&c=d||||host|80
+urlparse	http://host/p;q=1;r=2?x#y	http|host|/p|q=1;r=2|x|y|||host|
+urlparse	https://a.b.c/d/e/f?g=h;i=j#k	https|a.b.c|/d/e/f||g=h;i=j|k|||a.b.c|
+urlparse	http://192.168.0.1:3000/x	http|192.168.0.1:3000|/x||||||192.168.0.1|3000
+urlparse	http://[fe80::1%25eth0]:80/	http|[fe80::1%25eth0]:80|/||||||fe80::1%25eth0|80
+urlparse	urn:isbn:0451450523	urn||isbn:0451450523|||||||
+urlparse	news:comp.infosystems	news||comp.infosystems|||||||
+urlparse	http://host/path?a=1&a=2&b=3	http|host|/path||a=1&a=2&b=3||||host|
+urlunparse	http|www.example.com|/path|params|query=1|frag	http://www.example.com/path;params?query=1#frag
+urlunparse	https|user:pass@host:8080|/a/b||c=d|e	https://user:pass@host:8080/a/b?c=d#e
+urlunparse	http|[::1]:8080|/path|||	http://[::1]:8080/path
+urlunparse	|netloc|/path|||	//netloc/path
+urlunparse	||path/only|||	path/only
+urlunparse	scheme||opaque|||	scheme:opaque
+urlunparse	http|host||||	http://host
+urlunparse	mailto||user@example.com|||	mailto:user@example.com
+urlunparse	http|host|/p||a=b&c=d|	http://host/p?a=b&c=d
+urlunparse	http|host|/p|q=1|x|y	http://host/p;q=1?x#y
+quote	/	hello world	hello%20world
+quote	/	café	caf%C3%A9
+quote	/	a/b/c	a/b/c
+quote		a/b/c	a%2Fb%2Fc
+quote	/	100% sure	100%25%20sure
+quote	/	path with spaces/and/slashes	path%20with%20spaces/and/slashes
+quote	/	~user/file.txt	~user/file.txt
+quote	/	a+b=c&d	a%2Bb%3Dc%26d
+quote	/	safe-._~	safe-._~
+quote	/	Ünïcödé	%C3%9Cn%C3%AFc%C3%B6d%C3%A9
+quote	/	日本語	%E6%97%A5%E6%9C%AC%E8%AA%9E
+quote	/	emoji😀here	emoji%F0%9F%98%80here
+quote	/	!*'();:@&=+$,/?#[]	%21%2A%27%28%29%3B%3A%40%26%3D%2B%24%2C/%3F%23%5B%5D
+quote	/:@	!*'();:@&=+$,/?#[]	%21%2A%27%28%29%3B:@%26%3D%2B%24%2C/%3F%23%5B%5D
+quote	/		
+quote	/	AZaz09	AZaz09
+quote_plus	hello world	hello+world
+quote_plus	café au lait	caf%C3%A9+au+lait
+quote_plus	a b c	a+b+c
+quote_plus	a+b	a%2Bb
+quote_plus	key=value&other=thing	key%3Dvalue%26other%3Dthing
+quote_plus	100% done	100%25+done
+quote_plus	日本語 test	%E6%97%A5%E6%9C%AC%E8%AA%9E+test
+quote_plus	path/with/slash	path%2Fwith%2Fslash
+quote_plus		
+quote_plus	no_encoding_needed	no_encoding_needed
+unquote	hello%20world	hello world
+unquote	caf%C3%A9	café
+unquote	%E6%97%A5%E6%9C%AC%E8%AA%9E	日本語
+unquote	100%25%20sure	100% sure
+unquote	no_encoding	no_encoding
+unquote	a%2Fb%2Fc	a/b/c
+unquote	%41%42%43	ABC
+unquote	incomplete%2	incomplete%2
+unquote	incomplete%	incomplete%
+unquote	bad%zzhex	bad%zzhex
+unquote	%C3%28	�(
+unquote	trailing%	trailing%
+unquote	mixed%20and%2Bplus	mixed and+plus
+unquote	%F0%9F%98%80	😀
+unquote	plus+stays+plus	plus+stays+plus
+unquote		
+unquote	%2500	%00
+unquote_plus	hello+world	hello world
+unquote_plus	caf%C3%A9+bar	café bar
+unquote_plus	a+b+c	a b c
+unquote_plus	100%25+done	100% done
+unquote_plus	no+change%20here	no change here
+unquote_plus	%2Bliteral+plus	+literal plus
+unquote_plus		
+unquote_plus	plus+and%20space	plus and space
+urlencode	a=1;b=2	a=1&b=2
+urlencode	q=hello world;lang=en	q=hello+world&lang=en
+urlencode	name=café;city=São Paulo	name=caf%C3%A9&city=S%C3%A3o+Paulo
+urlencode	k=a+b;x=c&d	k=a%2Bb&x=c%26d
+urlencode	empty=;full=value	empty=&full=value
+urlencode	repeated=1;repeated=2	repeated=1&repeated=2
+urlencode	special=!*'()	special=%21%2A%27%28%29
+urlencode	unicode=日本語	unicode=%E6%97%A5%E6%9C%AC%E8%AA%9E
+parse_qsl	a=1&b=2	a=1|b=2
+parse_qsl	a=1&a=2&b=3	a=1|a=2|b=3
+parse_qsl	q=hello+world&lang=en	q=hello world|lang=en
+parse_qsl	name=caf%C3%A9	name=café
+parse_qsl	flag&other=x	other=x
+parse_qsl	x=&y=2	y=2
+parse_qsl	a=1;b=2	a=1;b=2
+parse_qsl		
+parse_qsl	onlykey	
+parse_qsl	k=a%26b	k=a&b
+parse_qsl	space=a+b+c	space=a b c
+parse_qsl	eq=a=b=c	eq=a=b=c
+urljoin	http://a/b/c/d;p?q	g:h	g:h
+urljoin	http://a/b/c/d;p?q	g	http://a/b/c/g
+urljoin	http://a/b/c/d;p?q	./g	http://a/b/c/g
+urljoin	http://a/b/c/d;p?q	g/	http://a/b/c/g/
+urljoin	http://a/b/c/d;p?q	/g	http://a/g
+urljoin	http://a/b/c/d;p?q	//g	http://g
+urljoin	http://a/b/c/d;p?q	?y	http://a/b/c/d;p?y
+urljoin	http://a/b/c/d;p?q	g?y	http://a/b/c/g?y
+urljoin	http://a/b/c/d;p?q	#s	http://a/b/c/d;p?q#s
+urljoin	http://a/b/c/d;p?q	g#s	http://a/b/c/g#s
+urljoin	http://a/b/c/d;p?q	g?y#s	http://a/b/c/g?y#s
+urljoin	http://a/b/c/d;p?q	;x	http://a/b/c/;x
+urljoin	http://a/b/c/d;p?q	g;x	http://a/b/c/g;x
+urljoin	http://a/b/c/d;p?q	g;x?y#s	http://a/b/c/g;x?y#s
+urljoin	http://a/b/c/d;p?q		http://a/b/c/d;p?q
+urljoin	http://a/b/c/d;p?q	.	http://a/b/c/
+urljoin	http://a/b/c/d;p?q	./	http://a/b/c/
+urljoin	http://a/b/c/d;p?q	..	http://a/b/
+urljoin	http://a/b/c/d;p?q	../	http://a/b/
+urljoin	http://a/b/c/d;p?q	../g	http://a/b/g
+urljoin	http://a/b/c/d;p?q	../..	http://a/
+urljoin	http://a/b/c/d;p?q	../../	http://a/
+urljoin	http://a/b/c/d;p?q	../../g	http://a/g
+urljoin	http://a/b/c/d;p?q	../../../g	http://a/g
+urljoin	http://a/b/c/d;p?q	../../../../g	http://a/g
+urljoin	http://a/b/c/d;p?q	/./g	http://a/g
+urljoin	http://a/b/c/d;p?q	/../g	http://a/g
+urljoin	http://a/b/c/d;p?q	g.	http://a/b/c/g.
+urljoin	http://a/b/c/d;p?q	.g	http://a/b/c/.g
+urljoin	http://a/b/c/d;p?q	g..	http://a/b/c/g..
+urljoin	http://a/b/c/d;p?q	..g	http://a/b/c/..g
+urljoin	http://a/b/c/d;p?q	./../g	http://a/b/g
+urljoin	http://a/b/c/d;p?q	./g/.	http://a/b/c/g/
+urljoin	http://a/b/c/d;p?q	g/./h	http://a/b/c/g/h
+urljoin	http://a/b/c/d;p?q	g/../h	http://a/b/c/h
+urljoin	http://a/b/c/d;p?q	g;x=1/./y	http://a/b/c/g;x=1/y
+urljoin	http://a/b/c/d;p?q	g;x=1/../y	http://a/b/c/y
+urljoin	http://a/b/c/d;p?q	g?y/./x	http://a/b/c/g?y/./x
+urljoin	http://a/b/c/d;p?q	g?y/../x	http://a/b/c/g?y/../x
+urljoin	http://a/b/c/d;p?q	g#s/./x	http://a/b/c/g#s/./x
+urljoin	http://a/b/c/d;p?q	g#s/../x	http://a/b/c/g#s/../x
+urljoin	http://a/b/c/d;p?q	https://other/x	https://other/x
+urljoin	http://example.com/dir/page.html	sibling.html	http://example.com/dir/sibling.html
+urljoin	http://example.com/dir/page.html	../up.html	http://example.com/up.html
+urljoin	http://example.com/dir/page.html	/root.html	http://example.com/root.html
+urljoin	http://example.com/dir/page.html	//cdn.example.com/lib.js	http://cdn.example.com/lib.js
+urljoin	http://example.com/dir/page.html	?newquery	http://example.com/dir/page.html?newquery
+urljoin	http://example.com/dir/page.html	#frag	http://example.com/dir/page.html#frag
+urljoin	http://example.com/dir/	sub/page.html	http://example.com/dir/sub/page.html
+urljoin	http://example.com	path	http://example.com/path
+urljoin	http://example.com/a/b		http://example.com/a/b
+urljoin	http://example.com/a/b/c	../../x	http://example.com/x
+urljoin	http://example.com/a/b/c	./d/./e	http://example.com/a/b/d/e

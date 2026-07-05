@@ -1,0 +1,15 @@
+[workspace]
+authors = ["Conor Bronsdon <cmbronsdon@gmail.com>"]
+channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+name = "mojo-url"
+description = "URL parsing, building, and percent/query-string encoding in pure Mojo, mirroring Python's urllib.parse"
+platforms = ["linux-64", "osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+test = "mojo run -I src test/test_url.mojo"
+demo = "mojo run -I src examples/parse_and_build.mojo \"https://user@host.example.com:8443/a/b?x=1&y=2#top\""
+fixtures = "python3 test/data/gen_fixtures.py > test/data/fixtures.txt"
+
+[dependencies]
+mojo = ">=1.0.0b3,<2"

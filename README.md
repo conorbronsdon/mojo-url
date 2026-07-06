@@ -22,6 +22,22 @@ fills that gap: same function names, same arguments, byte-for-byte
 matching output, so a Python developer can pick it up without a second
 manual.
 
+### Coming from Python
+
+If you know Python's `urllib.parse`, the names line up almost exactly:
+
+| Python (`urllib.parse`)             | mojo-url                              |
+| ----------------------------------- | ------------------------------------- |
+| `r = urlparse(url)`                 | `var r = urlparse(url)`               |
+| `r.scheme` / `r.netloc` / `r.path`  | `r.scheme` / `r.netloc` / `r.path`    |
+| `parse_qsl(r.query)`                | `parse_qsl(r.query)`                  |
+| `quote(s)` / `unquote(s)`           | `quote(s)` / `unquote(s)`             |
+| `urljoin(base, rel)`                | `urljoin(base, rel)`                  |
+
+One shape difference: `urlencode` takes a `List[QueryPair]` here (not a dict),
+so build pairs with `QueryPair(key, value)` and pass the list to
+`urlencode(pairs)`.
+
 ## What it handles
 
 - **`urlparse` / `urlunparse`**: the six-component split
@@ -114,9 +130,11 @@ zero crashes and zero hangs.
 
 ## Part of a pure-Mojo library suite
 
-Ten pure-Mojo libraries that mirror familiar Python stdlib and PyPI APIs,
+Eleven pure-Mojo libraries that mirror familiar Python stdlib and PyPI APIs,
 filling gaps in the native Mojo ecosystem:
 
+- [mojo-xml](https://github.com/conorbronsdon/mojo-xml) — general-purpose XML
+  parsing, an ElementTree-shaped DOM (Python's `xml.etree.ElementTree`)
 - [mojo-feed](https://github.com/conorbronsdon/mojo-feed) — RSS, Atom, and
   JSON Feed parsing (Python's `feedparser`)
 - [mojo-captions](https://github.com/conorbronsdon/mojo-captions) — SRT and

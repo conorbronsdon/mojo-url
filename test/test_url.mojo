@@ -50,9 +50,25 @@ def _pack_parse_result(r: ParseResult) -> String:
     if r.port() >= 0:
         port_str = String(r.port())
     return (
-        r.scheme + "|" + r.netloc + "|" + r.path + "|" + r.params + "|"
-        + r.query + "|" + r.fragment + "|" + r.username() + "|"
-        + r.password() + "|" + r.hostname() + "|" + port_str
+        r.scheme
+        + "|"
+        + r.netloc
+        + "|"
+        + r.path
+        + "|"
+        + r.params
+        + "|"
+        + r.query
+        + "|"
+        + r.fragment
+        + "|"
+        + r.username()
+        + "|"
+        + r.password()
+        + "|"
+        + r.hostname()
+        + "|"
+        + port_str
     )
 
 
@@ -72,7 +88,9 @@ def test_urlparse_full() raises:
 
 
 def test_urlparse_userinfo_and_port() raises:
-    var r = urlparse(String("https://user:pass@host.example.com:8080/a/b?c=d#e"))
+    var r = urlparse(
+        String("https://user:pass@host.example.com:8080/a/b?c=d#e")
+    )
     assert_equal(r.username(), "user")
     assert_equal(r.password(), "pass")
     assert_equal(r.hostname(), "host.example.com")
@@ -145,8 +163,12 @@ def test_urlunparse_roundtrip() raises:
 
 def test_urlunparse_opaque() raises:
     var r = ParseResult(
-        String("scheme"), String(""), String("opaque"),
-        String(""), String(""), String(""),
+        String("scheme"),
+        String(""),
+        String("opaque"),
+        String(""),
+        String(""),
+        String(""),
     )
     assert_equal(urlunparse(r), "scheme:opaque")
 
@@ -310,6 +332,9 @@ def _rfc_cases() -> List[QueryPair]:
         QueryPair(String("../../"), String("http://a/")),
         QueryPair(String("../../g"), String("http://a/g")),
         # 5.4.2 Abnormal Examples
+        # CPython treats a same-scheme reference as relative (backward compat),
+        # so http:g resolves to http://a/b/c/g rather than the strict http:g.
+        QueryPair(String("http:g"), String("http://a/b/c/g")),
         QueryPair(String("../../../g"), String("http://a/g")),
         QueryPair(String("../../../../g"), String("http://a/g")),
         QueryPair(String("/./g"), String("http://a/g")),
@@ -370,8 +395,12 @@ def test_fixtures_bytematch() raises:
         elif kind == "urlunparse":
             var p = _split_on(f[1], "|")
             var r = ParseResult(
-                p[0].copy(), p[1].copy(), p[2].copy(),
-                p[3].copy(), p[4].copy(), p[5].copy(),
+                p[0].copy(),
+                p[1].copy(),
+                p[2].copy(),
+                p[3].copy(),
+                p[4].copy(),
+                p[5].copy(),
             )
             got = urlunparse(r)
             expected = f[2]
@@ -394,8 +423,16 @@ def test_fixtures_bytematch() raises:
                     var eq = seg.find("=")
                     pairs.append(
                         QueryPair(
-                            String(StringSlice(unsafe_from_utf8=seg.as_bytes()[0:eq])),
-                            String(StringSlice(unsafe_from_utf8=seg.as_bytes()[eq + 1 :])),
+                            String(
+                                StringSlice(
+                                    unsafe_from_utf8=seg.as_bytes()[0:eq]
+                                )
+                            ),
+                            String(
+                                StringSlice(
+                                    unsafe_from_utf8=seg.as_bytes()[eq + 1 :]
+                                )
+                            ),
                         )
                     )
             got = urlencode(pairs)

@@ -7,9 +7,10 @@ A pure-Mojo port of the daily-driver surface of Python's
 
 Component-split and encoding behavior are matched byte-for-byte against
 CPython's `urllib.parse` via the fixtures in `test/data/fixtures.txt`.
-`urljoin` implements the RFC 3986 Section 5 reference-resolution
-algorithm ("Transform References" plus "Remove Dot Segments") and passes
-the full RFC 3986 Section 5.4 conformance table.
+`urljoin` is a faithful port of CPython's `urllib.parse.urljoin` (RFC 3986
+Section 5 reference resolution plus CPython's backward-compatible handling
+of a same-scheme reference) and passes the RFC 3986 Section 5.4 conformance
+table byte-for-byte against CPython.
 """
 
 from url.model import ParseResult, QueryPair
@@ -22,10 +23,22 @@ def _uses_params(scheme: String) -> Bool:
     """Schemes for which urlparse splits `;params` off the path (CPython)."""
     var s = scheme
     return (
-        s == "" or s == "ftp" or s == "hdl" or s == "prospero" or s == "http"
-        or s == "imap" or s == "https" or s == "shttp" or s == "rtsp"
-        or s == "rtsps" or s == "rtspu" or s == "sip" or s == "sips"
-        or s == "mms" or s == "sftp" or s == "tel"
+        s == ""
+        or s == "ftp"
+        or s == "hdl"
+        or s == "prospero"
+        or s == "http"
+        or s == "imap"
+        or s == "https"
+        or s == "shttp"
+        or s == "rtsp"
+        or s == "rtsps"
+        or s == "rtspu"
+        or s == "sip"
+        or s == "sips"
+        or s == "mms"
+        or s == "sftp"
+        or s == "tel"
     )
 
 
@@ -33,12 +46,31 @@ def _uses_netloc(scheme: String) -> Bool:
     """Schemes for which urlunsplit synthesizes a `//` authority (CPython)."""
     var s = scheme
     return (
-        s == "" or s == "ftp" or s == "http" or s == "gopher" or s == "nntp"
-        or s == "telnet" or s == "imap" or s == "wais" or s == "file"
-        or s == "mms" or s == "https" or s == "shttp" or s == "snews"
-        or s == "prospero" or s == "rtsp" or s == "rtsps" or s == "rtspu"
-        or s == "rsync" or s == "svn" or s == "svn+ssh" or s == "sftp"
-        or s == "nfs" or s == "git" or s == "git+ssh" or s == "ws"
+        s == ""
+        or s == "ftp"
+        or s == "http"
+        or s == "gopher"
+        or s == "nntp"
+        or s == "telnet"
+        or s == "imap"
+        or s == "wais"
+        or s == "file"
+        or s == "mms"
+        or s == "https"
+        or s == "shttp"
+        or s == "snews"
+        or s == "prospero"
+        or s == "rtsp"
+        or s == "rtsps"
+        or s == "rtspu"
+        or s == "rsync"
+        or s == "svn"
+        or s == "svn+ssh"
+        or s == "sftp"
+        or s == "nfs"
+        or s == "git"
+        or s == "git+ssh"
+        or s == "ws"
         or s == "wss"
     )
 
@@ -97,8 +129,19 @@ def _hex_val(b: UInt8) -> Int:
 def _utf8_lossy(data: Span[UInt8, _]) -> String:
     """Decode bytes as UTF-8, emitting U+FFFD for invalid sequences.
 
-    Matches Python's `errors="replace"` behavior for the sequences the
-    fixtures exercise (e.g. a lead byte followed by a non-continuation).
+    Matches CPython's `errors="replace"` (the "substitution of maximal
+    subparts of an ill-formed subsequence" from the Unicode standard, which
+    is what `bytes.decode("utf-8", "replace")` implements). Two properties
+    that a naive decoder gets wrong and that this reproduces:
+
+    * The **second byte's** valid range is lead-byte-specific (RFC 3629 /
+      Unicode Table 3-7), so overlong encodings (`E0 80..9F`), surrogates
+      (`ED A0..BF`), and out-of-range 4-byte leads (`F0 80..8F`, `F4 90..BF`)
+      are rejected instead of decoding to raw/invalid bytes.
+    * When a sequence is ill-formed, exactly **one** U+FFFD is emitted and
+      the decoder resumes at the first byte that is *not* part of the
+      maximal valid subpart — a truncated 3-byte sequence yields one U+FFFD,
+      not one per byte.
     """
     var out = String()
     var i = 0
@@ -111,31 +154,55 @@ def _utf8_lossy(data: Span[UInt8, _]) -> String:
                 i += 1
             out += String(StringSlice(unsafe_from_utf8=data[run_start:i]))
             continue
+        # Sequence length and the *second* byte's valid range, which is
+        # lead-byte-specific. Third/fourth bytes are always 0x80..0xBF.
         var seq_len = 0
-        var cp = 0
+        var lo2 = 0x80
+        var hi2 = 0xBF
         if b >= 0xC2 and b <= 0xDF:
             seq_len = 2
-            cp = Int(b) & 0x1F
-        elif b >= 0xE0 and b <= 0xEF:
+        elif b == 0xE0:
             seq_len = 3
-            cp = Int(b) & 0x0F
-        elif b >= 0xF0 and b <= 0xF4:
+            lo2 = 0xA0
+        elif b >= 0xE1 and b <= 0xEC:
+            seq_len = 3
+        elif b == 0xED:
+            seq_len = 3
+            hi2 = 0x9F
+        elif b >= 0xEE and b <= 0xEF:
+            seq_len = 3
+        elif b == 0xF0:
             seq_len = 4
-            cp = Int(b) & 0x07
-        if seq_len == 0 or i + seq_len > n:
+            lo2 = 0x90
+        elif b >= 0xF1 and b <= 0xF3:
+            seq_len = 4
+        elif b == 0xF4:
+            seq_len = 4
+            hi2 = 0x8F
+        # else: invalid lead byte (0x80..0xC1, 0xF5..0xFF) -> seq_len == 0.
+        if seq_len == 0:
             out += "�"
             i += 1
             continue
-        var ok = True
+        # Consume the maximal subpart: lead + each following byte that is
+        # in range at its position. On the first out-of-range byte (or EOF)
+        # emit a single U+FFFD and resume at that byte.
+        var consumed = 1
+        var valid = True
         for k in range(1, seq_len):
-            var c = data[i + k]
-            if c < 0x80 or c > 0xBF:
-                ok = False
+            if i + k >= n:
+                valid = False
                 break
-            cp = (cp << 6) | (Int(c) & 0x3F)
-        if not ok or cp > 0x10FFFF or (cp >= 0xD800 and cp <= 0xDFFF):
+            var c = data[i + k]
+            var lo = UInt8(lo2) if k == 1 else UInt8(0x80)
+            var hi = UInt8(hi2) if k == 1 else UInt8(0xBF)
+            if c < lo or c > hi:
+                valid = False
+                break
+            consumed += 1
+        if not valid:
             out += "�"
-            i += 1
+            i += consumed
             continue
         out += String(StringSlice(unsafe_from_utf8=data[i : i + seq_len]))
         i += seq_len
@@ -148,7 +215,8 @@ def _utf8_lossy(data: Span[UInt8, _]) -> String:
 
 
 def _is_always_safe(b: UInt8) -> Bool:
-    """The characters percent-encoding never escapes (Python's `_ALWAYS_SAFE`)."""
+    """The characters percent-encoding never escapes (Python's `_ALWAYS_SAFE`).
+    """
     return (
         _is_alpha(b)
         or _is_digit(b)
@@ -168,8 +236,8 @@ def _byte_in(s: String, b: UInt8) -> Bool:
 
 def _pct_byte(mut out: String, b: UInt8):
     out += "%"
-    out += String(_HEX_UPPER[byte = Int(b >> 4)])
-    out += String(_HEX_UPPER[byte = Int(b & 0xF)])
+    out += String(_HEX_UPPER[byte=Int(b >> 4)])
+    out += String(_HEX_UPPER[byte=Int(b & 0xF)])
 
 
 def quote(string: String, safe: String = "/") -> String:
@@ -352,9 +420,7 @@ def urlparse(url: String) -> ParseResult:
             params = _from(work, semi + 1)
             work = _sub(work, 0, semi)
 
-    return ParseResult(
-        scheme^, netloc^, work^, params^, query^, fragment^
-    )
+    return ParseResult(scheme^, netloc^, work^, params^, query^, fragment^)
 
 
 def urlunparse(components: ParseResult) -> String:
@@ -416,9 +482,7 @@ def _split_all(s: String, sep: String) -> List[String]:
     return parts^
 
 
-def parse_qsl(
-    query: String, separator: String = "&"
-) -> List[QueryPair]:
+def parse_qsl(query: String, separator: String = "&") -> List[QueryPair]:
     """Parse a query string into ordered `(key, value)` pairs.
 
     Mirrors `urllib.parse.parse_qsl` defaults: fields split on `separator`
@@ -480,188 +544,136 @@ def urlencode(pairs: List[QueryPair]) -> String:
 # ---------------------------------------------------------------------------
 
 
-@fieldwise_init
-struct _Uri(Copyable, Movable):
-    """A URI reference split into RFC 3986 components with `defined` flags."""
-
-    var scheme: String
-    var scheme_def: Bool
-    var authority: String
-    var authority_def: Bool
-    var path: String
-    var query: String
-    var query_def: Bool
-    var fragment: String
-    var fragment_def: Bool
-
-
-def _uri_split(url: String) -> _Uri:
-    """Split per RFC 3986 Appendix B (no `;params` handling — RFC has none)."""
-    var rest = url.copy()
-
-    var scheme = String()
-    var scheme_def = False
-    var authority = String()
-    var authority_def = False
-    var query = String()
-    var query_def = False
-    var fragment = String()
-    var fragment_def = False
-
-    var h = rest.find("#")
-    if h != -1:
-        fragment = _from(rest, h + 1)
-        fragment_def = True
-        rest = _sub(rest, 0, h)
-    var q = rest.find("?")
-    if q != -1:
-        query = _from(rest, q + 1)
-        query_def = True
-        rest = _sub(rest, 0, q)
-
-    var colon = rest.find(":")
-    var slash = rest.find("/")
-    if colon > 0 and (slash == -1 or colon < slash):
-        scheme = _sub(rest, 0, colon)
-        scheme_def = True
-        rest = _from(rest, colon + 1)
-
-    if rest.startswith("//"):
-        var body = _from(rest, 2)
-        var s2 = body.find("/")
-        if s2 == -1:
-            authority = body^
-            rest = String()
-        else:
-            authority = _sub(body, 0, s2)
-            rest = _from(body, s2)
-        authority_def = True
-
-    return _Uri(
-        scheme^, scheme_def, authority^, authority_def,
-        rest^, query^, query_def, fragment^, fragment_def,
+def _uses_relative(scheme: String) -> Bool:
+    """Schemes for which urljoin resolves a reference relatively (CPython)."""
+    var s = scheme
+    return (
+        s == ""
+        or s == "ftp"
+        or s == "http"
+        or s == "gopher"
+        or s == "nntp"
+        or s == "imap"
+        or s == "wais"
+        or s == "file"
+        or s == "https"
+        or s == "shttp"
+        or s == "mms"
+        or s == "prospero"
+        or s == "rtsp"
+        or s == "rtspu"
+        or s == "sftp"
+        or s == "svn"
+        or s == "svn+ssh"
+        or s == "ws"
+        or s == "wss"
     )
 
 
-def _remove_last_segment(mut output: String):
-    var slash = output.rfind("/")
-    if slash == -1:
-        output = String()
-    else:
-        output = _sub(output, 0, slash)
-
-
-def _remove_dot_segments(path: String) -> String:
-    """RFC 3986 Section 5.2.4 — collapse `.`/`..` segments in a path."""
-    var input = path.copy()
-    var output = String()
-    while input.byte_length() > 0:
-        if input.startswith("../"):
-            input = _from(input, 3)
-        elif input.startswith("./"):
-            input = _from(input, 2)
-        elif input.startswith("/./"):
-            input = "/" + _from(input, 3)
-        elif input == "/.":
-            input = String("/")
-        elif input.startswith("/../"):
-            input = "/" + _from(input, 4)
-            _remove_last_segment(output)
-        elif input == "/..":
-            input = String("/")
-            _remove_last_segment(output)
-        elif input == "." or input == "..":
-            input = String()
-        else:
-            var bytes = input.as_bytes()
-            var j = 1 if (len(bytes) > 0 and bytes[0] == UInt8(ord("/"))) else 0
-            while j < len(bytes) and bytes[j] != UInt8(ord("/")):
-                j += 1
-            output += _sub(input, 0, j)
-            input = _from(input, j)
-    return output^
-
-
-def _merge(base: _Uri, ref_path: String) -> String:
-    """RFC 3986 Section 5.2.3 — merge a relative path onto the base path."""
-    if base.authority_def and base.path.byte_length() == 0:
-        return "/" + ref_path
-    var slash = base.path.rfind("/")
-    if slash == -1:
-        return ref_path.copy()
-    return _sub(base.path, 0, slash + 1) + ref_path
-
-
 def urljoin(base: String, url: String) -> String:
-    """Resolve `url` against `base` per RFC 3986 Section 5 ("Transform References").
+    """Resolve `url` against `base`, mirroring `urllib.parse.urljoin` byte-for-byte.
 
-    Implements the full reference-resolution algorithm — absolute,
-    network-path, absolute-path, and relative-path references, plus
-    `Remove Dot Segments` — and passes the RFC 3986 Section 5.4
-    conformance table. Empty `base`/`url` short-circuit as in
-    `urllib.parse.urljoin`.
+    This is a faithful port of CPython's `urljoin`, which implements RFC 3986
+    Section 5 reference resolution *plus* CPython's long-standing backward
+    compatibility: a reference whose scheme equals the base scheme (and whose
+    scheme uses relative resolution) is treated as relative. For example
+    `urljoin("http://a/b/c/d;p?q", "http:g")` yields `http://a/b/c/g`, not the
+    strict-RFC `http:g` — matching `urllib.parse`, which is this library's
+    stated contract. Digit-led pseudo-schemes such as `10:30.html` are *not*
+    schemes (the scheme must be alpha-led), so they resolve as relative paths.
+    A reference with a different scheme is returned verbatim, without dot-
+    segment removal, exactly as CPython does. Passes the RFC 3986 Section 5.4
+    conformance table (see `test_urljoin_rfc3986_table`).
     """
     if base.byte_length() == 0:
         return url.copy()
     if url.byte_length() == 0:
         return base.copy()
 
-    var b = _uri_split(base)
-    var r = _uri_split(url)
+    var b = urlparse(base)
+    var r = urlparse(url)
 
-    var t_scheme: String
-    var t_scheme_def: Bool
-    var t_authority: String
-    var t_authority_def: Bool
-    var t_path: String
-    var t_query: String
-    var t_query_def: Bool
+    var scheme = r.scheme.copy()
+    if scheme.byte_length() == 0:
+        scheme = b.scheme.copy()
+    var netloc = r.netloc.copy()
+    var path = r.path.copy()
+    var params = r.params.copy()
+    var query = r.query.copy()
+    var fragment = r.fragment.copy()
 
-    if r.scheme_def:
-        t_scheme = r.scheme.copy()
-        t_scheme_def = True
-        t_authority = r.authority.copy()
-        t_authority_def = r.authority_def
-        t_path = _remove_dot_segments(r.path)
-        t_query = r.query.copy()
-        t_query_def = r.query_def
+    # Different scheme, or a scheme that does not use relative resolution:
+    # the reference is already absolute, return it unchanged.
+    if scheme != b.scheme or not _uses_relative(scheme):
+        return url.copy()
+
+    if _uses_netloc(scheme):
+        if netloc.byte_length() > 0:
+            return urlunparse(
+                ParseResult(scheme^, netloc^, path^, params^, query^, fragment^)
+            )
+        netloc = b.netloc.copy()
+
+    # Reference with no path/params: inherit base path (and query if absent).
+    if path.byte_length() == 0 and params.byte_length() == 0:
+        path = b.path.copy()
+        params = b.params.copy()
+        if query.byte_length() == 0:
+            query = b.query.copy()
+        return urlunparse(
+            ParseResult(scheme^, netloc^, path^, params^, query^, fragment^)
+        )
+
+    # Resolve the path against the base path (RFC 3986 Section 5.2, as CPython
+    # implements it via segment lists).
+    var base_parts = _split_all(b.path, "/")
+    if base_parts[len(base_parts) - 1] != "":
+        # The last base segment is a file, not a directory: drop it.
+        _ = base_parts.pop()
+
+    var segments: List[String]
+    if path.startswith("/"):
+        # Absolute-path reference: ignore the base path entirely.
+        segments = _split_all(path, "/")
     else:
-        if r.authority_def:
-            t_authority = r.authority.copy()
-            t_authority_def = True
-            t_path = _remove_dot_segments(r.path)
-            t_query = r.query.copy()
-            t_query_def = r.query_def
-        else:
-            if r.path.byte_length() == 0:
-                t_path = b.path.copy()
-                if r.query_def:
-                    t_query = r.query.copy()
-                    t_query_def = True
-                else:
-                    t_query = b.query.copy()
-                    t_query_def = b.query_def
-            else:
-                if r.path.startswith("/"):
-                    t_path = _remove_dot_segments(r.path)
-                else:
-                    t_path = _remove_dot_segments(_merge(b, r.path))
-                t_query = r.query.copy()
-                t_query_def = r.query_def
-            t_authority = b.authority.copy()
-            t_authority_def = b.authority_def
-        t_scheme = b.scheme.copy()
-        t_scheme_def = b.scheme_def
+        segments = base_parts.copy()
+        for seg in _split_all(path, "/"):
+            segments.append(seg)
+        # Drop empty interior segments so re-joining can't create `//`.
+        var filtered = List[String]()
+        for idx in range(len(segments)):
+            var keep = (
+                idx == 0
+                or idx == len(segments) - 1
+                or segments[idx].byte_length() > 0
+            )
+            if keep:
+                filtered.append(segments[idx].copy())
+        segments = filtered^
 
-    # Recompose (RFC 3986 Section 5.3).
-    var result = String()
-    if t_scheme_def:
-        result += t_scheme + ":"
-    if t_authority_def:
-        result += "//" + t_authority
-    result += t_path
-    if t_query_def:
-        result += "?" + t_query
-    if r.fragment_def:
-        result += "#" + r.fragment
-    return result^
+    var resolved = List[String]()
+    for seg in segments:
+        if seg == "..":
+            if len(resolved) > 0:
+                _ = resolved.pop()
+        elif seg == ".":
+            continue
+        else:
+            resolved.append(seg.copy())
+
+    var last = segments[len(segments) - 1]
+    if last == "." or last == "..":
+        # A trailing relative dir needs its trailing slash back.
+        resolved.append(String())
+
+    var joined = String()
+    for idx in range(len(resolved)):
+        if idx > 0:
+            joined += "/"
+        joined += resolved[idx]
+    if joined.byte_length() == 0:
+        joined = String("/")
+
+    return urlunparse(
+        ParseResult(scheme^, netloc^, joined^, params^, query^, fragment^)
+    )

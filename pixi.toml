@@ -12,4 +12,4 @@ demo = "mojo run -I src examples/parse_and_build.mojo \"https://user@host.exampl
 fixtures = "python3 test/data/gen_fixtures.py > test/data/fixtures.txt"
 
 [dependencies]
-mojo = ">=1.0.0b3,<2"
+mojo = ">=1.0.0b3.dev0,<2"

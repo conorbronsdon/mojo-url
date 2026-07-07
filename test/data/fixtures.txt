@@ -78,6 +78,14 @@ unquote	%F0%9F%98%80	😀
 unquote	plus+stays+plus	plus+stays+plus
 unquote		
 unquote	%2500	%00
+unquote	%E0%80%AF	���
+unquote	%C0%AF	��
+unquote	%E6%97	�
+unquote	%F0%9F%98	�
+unquote	%E6%97%28	�(
+unquote	%ED%A0%80	���
+unquote	%F5%80%80%80	����
+unquote	%F4%90%80%80	����
 unquote_plus	hello+world	hello world
 unquote_plus	caf%C3%A9+bar	café bar
 unquote_plus	a+b+c	a b c
@@ -129,6 +137,7 @@ urljoin	http://a/b/c/d;p?q	../g	http://a/b/g
 urljoin	http://a/b/c/d;p?q	../..	http://a/
 urljoin	http://a/b/c/d;p?q	../../	http://a/
 urljoin	http://a/b/c/d;p?q	../../g	http://a/g
+urljoin	http://a/b/c/d;p?q	http:g	http://a/b/c/g
 urljoin	http://a/b/c/d;p?q	../../../g	http://a/g
 urljoin	http://a/b/c/d;p?q	../../../../g	http://a/g
 urljoin	http://a/b/c/d;p?q	/./g	http://a/g
@@ -159,3 +168,6 @@ urljoin	http://example.com	path	http://example.com/path
 urljoin	http://example.com/a/b		http://example.com/a/b
 urljoin	http://example.com/a/b/c	../../x	http://example.com/x
 urljoin	http://example.com/a/b/c	./d/./e	http://example.com/a/b/d/e
+urljoin	http://a/b/	10:30.html	http://a/b/10:30.html
+urljoin	http://a/b/c/d;p?q	http:g	http://a/b/c/g
+urljoin	http://a/b/c/d;p?q	http://x/../y	http://x/../y

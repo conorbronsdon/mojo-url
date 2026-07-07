@@ -54,9 +54,10 @@ so build pairs with `QueryPair(key, value)` and pass the list to
   pairs, or parse one back into ordered pairs or a `{key: [values...]}`
   grouping, with repeated keys and blank-value dropping matching
   `urllib.parse` defaults.
-- **`urljoin`**: the full RFC 3986 Section 5 reference-resolution
-  algorithm ("Transform References" plus "Remove Dot Segments"), passing
-  the canonical Section 5.4 conformance table 41/41.
+- **`urljoin`**: RFC 3986 Section 5 reference resolution as `urllib.parse`
+  implements it (including CPython's backward-compatible handling of a
+  same-scheme reference), passing the canonical Section 5.4 conformance
+  table 42/42.
 
 ## What it deliberately does NOT do
 
@@ -68,10 +69,13 @@ so build pairs with `QueryPair(key, value)` and pass the list to
   returns `List[QueryPair]` instead, because Mojo's `List` can't hold
   Python-style anonymous tuples; `QueryPair` has the same `.key`/`.value`
   fields a tuple unpack would give you.
-- **Loosen `urljoin`'s scheme check.** A reference with a scheme
-  (`g:h`) is always treated as absolute per RFC 3986, matching CPython
-  on the conformance suite; there's no "guess it's actually relative"
-  fallback some browsers apply.
+- **Diverge from `urljoin`'s scheme handling.** A reference whose scheme
+  differs from the base (`g:h`) is treated as absolute, exactly as CPython
+  does. A reference whose scheme *equals* the base scheme (`http:g` against
+  an `http` base) resolves relatively — CPython's long-standing
+  backward-compatibility behavior — rather than the strict-RFC `http:g`.
+  Digit-led pseudo-schemes (`10:30.html`) are not schemes at all, so they
+  resolve as relative paths.
 
 ## Install
 
@@ -122,8 +126,8 @@ pixi run test
 ```
 
 38 tests: hand-written behavioral checks per function, the RFC 3986
-Section 5.4 conformance table (41/41), and a fixture harness that
-byte-matches all 161 `urllib.parse` fixtures generated fresh from
+Section 5.4 conformance table (42/42), and a fixture harness that
+byte-matches all 173 `urllib.parse` fixtures generated fresh from
 CPython. `test/fuzz_runner.mojo` is the robustness target: 600 mutated
 inputs through `urlparse`/`urlunparse` and both quote/unquote pairs,
 zero crashes and zero hangs.

@@ -121,6 +121,9 @@ RFC3986_NORMAL = [
 ]
 
 RFC3986_ABNORMAL = [
+    # CPython resolves a same-scheme reference relatively (backward compat),
+    # so http:g -> http://a/b/c/g rather than the strict-RFC http:g.
+    ("http:g", "http://a/b/c/g"),
     ("../../../g", "http://a/g"),
     ("../../../../g", "http://a/g"),
     ("/./g", "http://a/g"),
@@ -254,6 +257,15 @@ def main():
         "plus+stays+plus",
         "",
         "%2500",
+        # --- ill-formed UTF-8 hardening (maximal-subpart / overlong) ---
+        "%E0%80%AF",       # overlong '/' -> 3x U+FFFD (not raw bytes)
+        "%C0%AF",          # overlong 2-byte -> invalid leads, 2x U+FFFD
+        "%E6%97",          # truncated 3-byte -> 1x U+FFFD
+        "%F0%9F%98",       # truncated 4-byte emoji -> 1x U+FFFD
+        "%E6%97%28",       # valid cont then '(' -> 1x U+FFFD then '('
+        "%ED%A0%80",       # UTF-16 surrogate -> 3x U+FFFD
+        "%F5%80%80%80",    # lead > U+10FFFF -> 4x U+FFFD
+        "%F4%90%80%80",    # 4-byte > U+10FFFF -> U+FFFD run
     ]
     for s in unquote_inputs:
         rec_unquote(out, s)
@@ -324,6 +336,11 @@ def main():
         ("http://example.com/a/b", ""),
         ("http://example.com/a/b/c", "../../x"),
         ("http://example.com/a/b/c", "./d/./e"),
+        # Digit-led pseudo-scheme is a relative path, not a scheme.
+        ("http://a/b/", "10:30.html"),
+        # Same-scheme backward-compat + absolute ref keeps its dot segments.
+        ("http://a/b/c/d;p?q", "http:g"),
+        ("http://a/b/c/d;p?q", "http://x/../y"),
     ]
     for base, ref in urljoin_extra:
         rec_urljoin(out, base, ref)

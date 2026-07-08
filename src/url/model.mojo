@@ -16,7 +16,7 @@ zone id after `%` preserved, matching Python.
 
 
 @fieldwise_init
-struct QueryPair(Copyable, Movable, Writable, Equatable):
+struct QueryPair(Copyable, Equatable, Movable, Writable):
     """One `key=value` pair from a query string (decoded)."""
 
     var key: String
@@ -30,7 +30,7 @@ struct QueryPair(Copyable, Movable, Writable, Equatable):
 
 
 @fieldwise_init
-struct ParseResult(Copyable, Movable, Writable, Equatable):
+struct ParseResult(Copyable, Equatable, Movable, Writable):
     """The six-tuple split of a URL, plus netloc-derived accessors."""
 
     var scheme: String

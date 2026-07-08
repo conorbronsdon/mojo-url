@@ -1,4 +1,4 @@
-"""mojo-url: URL parsing, building, and percent/query-string encoding.
+"""URL parsing, building, and percent/query-string encoding (mojo-url).
 
 A pure-Mojo mirror of Python's `urllib.parse` — same function names, same
 byte-for-byte output — with an RFC 3986 Section 5 conformant `urljoin`.

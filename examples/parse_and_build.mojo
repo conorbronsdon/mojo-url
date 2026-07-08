@@ -50,8 +50,12 @@ def main() raises:
     var new_query = urlencode(pairs)
     var rebuilt = urlunparse(
         ParseResult(
-            r.scheme.copy(), r.netloc.copy(), r.path.copy(),
-            r.params.copy(), new_query^, r.fragment.copy(),
+            r.scheme.copy(),
+            r.netloc.copy(),
+            r.path.copy(),
+            r.params.copy(),
+            new_query^,
+            r.fragment.copy(),
         )
     )
     print()

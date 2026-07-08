@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- New `url.errors` module — the position-aware parse-error pattern shared
+  across the mojo-* parser suite: `line_col` maps a byte offset in a
+  source buffer to a 1-based (line, byte-column) pair, and `parse_error`
+  builds an `Error` reading `<msg> at line <L>, column <C>: '<snippet>'`
+  with a whitespace-trimmed, ~30-byte, UTF-8-safe snippet of the
+  offending line. Exported as `url.line_col` / `url.parse_error`.
+  The library itself mirrors `urllib.parse`'s permissive behavior and has
+  no raising parse paths today, so no existing messages changed; the
+  helpers are ready for future strict/validating APIs. 21 new unit tests
+  in `test/test_errors.mojo` cover every documented edge case.
+
 ## 0.1.0 — 2026-07-05
 
 Initial release. A pure-Mojo mirror of Python's `urllib.parse`:

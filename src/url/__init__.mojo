@@ -4,6 +4,7 @@ A pure-Mojo mirror of Python's `urllib.parse` — same function names, same
 byte-for-byte output — with an RFC 3986 Section 5 conformant `urljoin`.
 """
 
+from url.errors import line_col, parse_error
 from url.model import ParseResult, QueryPair
 from url.parse import (
     urlparse,

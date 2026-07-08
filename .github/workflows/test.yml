@@ -39,4 +39,6 @@ jobs:
           git diff --exit-code test/data/fixtures.txt
 
       - name: Tests
-        run: .venv/bin/mojo run -I src test/test_url.mojo
+        run: |
+          .venv/bin/mojo run -I src test/test_url.mojo
+          .venv/bin/mojo run -I src test/test_errors.mojo

@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Mojo](https://img.shields.io/badge/Mojo-1.0.0b3%2B_nightly-orange?style=flat-square)](https://mojolang.org)
-[![Podcast](https://img.shields.io/badge/Podcast-Chain_of_Thought-purple?style=flat-square)](https://chainofthought.show)
+[![Podcast](https://img.shields.io/badge/Podcast-Chain_of_Thought-purple?style=flat-square)](https://chainofthought.show/?utm_source=github&utm_medium=referral&utm_campaign=repo-readme&utm_content=mojo-url)
 [![X](https://img.shields.io/badge/X-@ConorBronsdon-black?style=flat-square&logo=x)](https://x.com/ConorBronsdon)
 
 <img src="docs/social-preview.png" width="800">
@@ -166,8 +166,8 @@ RFC 3986 table. Run `pixi run test` before sending a PR.
 
 ## About
 
-Built by [Conor Bronsdon](https://conorbronsdon.com) — host of
-[Chain of Thought](https://chainofthought.show), a podcast about AI agents,
+Built by [Conor Bronsdon](https://conorbronsdon.com/?utm_source=github&utm_medium=referral&utm_campaign=repo-readme&utm_content=mojo-url) — host of
+[Chain of Thought](https://chainofthought.show/?utm_source=github&utm_medium=referral&utm_campaign=repo-readme&utm_content=mojo-url), a podcast about AI agents,
 infrastructure, and engineering. This library exists because every other
 tool in this suite eventually needs to parse a feed link, rewrite a query
 parameter, or resolve a relative URL. Find me on
